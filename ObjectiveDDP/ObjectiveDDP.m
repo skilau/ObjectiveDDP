@@ -31,8 +31,15 @@
 //  session: string (if trying to connectWebSocket to an existing DDP session)
 //  version: string (the proposed protocol version)
 //  support: array of strings (protocol versions supported by the client, in order of preference)
-- (void)connectWithSession:(NSString *)session version:(NSString *)version support:(NSString *)support {
-    NSDictionary *fields = @{@"msg": @"connect", @"version": version};
+- (void)connectWithSession:(NSString *)session version:(NSString *)version support:(NSArray *)support {
+    NSMutableDictionary *fields = [[NSMutableDictionary alloc] initWithDictionary:@{@"msg": @"connect", @"version": version }];
+
+    // If support is empty, populate the array with the version given
+    if (support == nil) {
+        support = [[NSArray alloc] initWithObjects:version, nil];
+    }
+    [fields setObject:support forKey:@"support"];
+
     NSString *json = [self _buildJSONWithFields:fields parameters:nil];
     [self.webSocket send:json];
 }
