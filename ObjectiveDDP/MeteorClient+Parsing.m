@@ -74,10 +74,13 @@ static int LOGON_RETRY_MAX = 5;
     }
 }
 
-- (void)_handleAddedMessage:(NSDictionary *)message msg:(NSString *)msg {
+- (void)_handleAddedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate {
     if (msg && [msg isEqualToString:@"added"]
         && message[@"collection"]) {
         NSDictionary *object = [self _parseObjectAndAddToCollection:message];
+        if (delegate) {
+            [delegate addedMessage:message[@"collection"] data:object];
+        }
         NSString *notificationName = [NSString stringWithFormat:@"%@_added", message[@"collection"]];
         [[NSNotificationCenter defaultCenter] postNotificationName:notificationName object:self userInfo:object];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"added" object:self userInfo:object];
@@ -97,10 +100,13 @@ static int LOGON_RETRY_MAX = 5;
     return object;
 }
 
-- (void)_handleRemovedMessage:(NSDictionary *)message msg:(NSString *)msg {
+- (void)_handleRemovedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate {
     if (msg && [msg isEqualToString:@"removed"]
         && message[@"collection"]) {
         [self _parseRemoved:message];
+        if (delegate) {
+            [delegate removedMessage:message[@"collection"]];
+        }
         NSString *notificationName = [NSString stringWithFormat:@"%@_removed", message[@"collection"]];
         [[NSNotificationCenter defaultCenter] postNotificationName:notificationName object:self userInfo:@{@"_id": message[@"id"]}];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"removed" object:self];
@@ -123,10 +129,13 @@ static int LOGON_RETRY_MAX = 5;
     [collection removeObjectAtIndex:indexOfRemovedObject];
 }
 
-- (void)_handleChangedMessage:(NSDictionary *)message msg:(NSString *)msg {
+- (void)_handleChangedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate {
     if (msg && [msg isEqualToString:@"changed"]
         && message[@"collection"]) {
         NSDictionary *object = [self _parseObjectAndUpdateCollection:message];
+        if (delegate) {
+            [delegate changedMessage:message[@"collection"] data:object];
+        }
         NSString *notificationName = [NSString stringWithFormat:@"%@_changed", message[@"collection"]];
         [[NSNotificationCenter defaultCenter] postNotificationName:notificationName object:self userInfo:object];
         [[NSNotificationCenter defaultCenter] postNotificationName:@"changed" object:self userInfo:object];

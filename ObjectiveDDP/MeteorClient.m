@@ -137,6 +137,7 @@ NSString * const MeteorClientTransportErrorDomain = @"boundsj.objectiveddp.trans
 #pragma mark <ObjectiveDDPDelegate>
 
 - (void)didReceiveMessage:(NSDictionary *)message {
+
     NSString *msg = [message objectForKey:@"msg"];
     if (!msg) return;
     NSString *messageId = message[@"id"];
@@ -145,12 +146,15 @@ NSString * const MeteorClientTransportErrorDomain = @"boundsj.objectiveddp.trans
     [self _handleLoginChallengeResponse:message msg:msg];
     [self _handleLoginError:message msg:msg];    
     [self _handleHAMKVerification:message msg:msg];
-    [self _handleAddedMessage:message msg:msg];
-    [self _handleRemovedMessage:message msg:msg];
-    [self _handleChangedMessage:message msg:msg];
+    [self _handleAddedMessage:message msg:msg delegate:self.subscriptionDelegate];
+    [self _handleRemovedMessage:message msg:msg delegate:self.subscriptionDelegate];
+    [self _handleChangedMessage:message msg:msg delegate:self.subscriptionDelegate];
     
     if (msg && [msg isEqualToString:@"connected"]) {
         self.connected = YES;
+        if (self.connectionDelegate) {
+            [self.connectionDelegate ddpConnected];
+        }
         [[NSNotificationCenter defaultCenter] postNotificationName:@"connected" object:nil];
         if (_sessionToken) {
             [self.ddp methodWithId:[BSONIdGenerator generate]
@@ -166,6 +170,9 @@ NSString * const MeteorClientTransportErrorDomain = @"boundsj.objectiveddp.trans
             for(NSString *subscriptionName in _subscriptions) {
                 NSString *curSubId = _subscriptions[subscriptionName];
                 if([curSubId isEqualToString:readySubscription]) {
+                    if (self.subscriptionDelegate) {
+                        [self.subscriptionDelegate readyMessage:subscriptionName];
+                    }
                     NSString *notificationName = [NSString stringWithFormat:@"%@_ready", subscriptionName];
                     [[NSNotificationCenter defaultCenter] postNotificationName:notificationName object:self];
                     break;
@@ -179,6 +186,9 @@ NSString * const MeteorClientTransportErrorDomain = @"boundsj.objectiveddp.trans
     self.websocketReady = YES;
     [self resetCollections];
     [self.ddp connectWithSession:nil version:@"pre1" support:nil];
+    if (self.connectionDelegate) {
+        [self.connectionDelegate clientConnected];
+    }
     [[NSNotificationCenter defaultCenter] postNotificationName:MeteorClientDidConnectNotification object:self];
 }
 
@@ -207,6 +217,9 @@ NSString * const MeteorClientTransportErrorDomain = @"boundsj.objectiveddp.trans
     self.websocketReady = NO;
     self.connected = NO;
     [self _invalidateUnresolvedMethods];
+    if (self.connectionDelegate) {
+        [self.connectionDelegate clientDisconnected];
+    }
     [[NSNotificationCenter defaultCenter] postNotificationName:MeteorClientDidDisconnectNotification object:self];
     if (_disconnecting) {
         _disconnecting = NO;

@@ -1,6 +1,8 @@
 #import "ObjectiveDDP.h"
 
 @protocol DDPAuthDelegate;
+@protocol DDPSubscriptionDelegate;
+@protocol DDPConnectionDelegate;
 
 extern NSString * const MeteorClientDidConnectNotification;
 extern NSString * const MeteorClientDidDisconnectNotification;
@@ -29,6 +31,8 @@ typedef void(^MeteorClientMethodCallback)(NSDictionary *response, NSError *error
 @interface MeteorClient : NSObject<ObjectiveDDPDelegate>
 
 @property (nonatomic, strong) ObjectiveDDP *ddp;
+@property (nonatomic, weak) id<DDPConnectionDelegate> connectionDelegate;
+@property (nonatomic, weak) id<DDPSubscriptionDelegate> subscriptionDelegate;
 @property (nonatomic, weak) id<DDPAuthDelegate> authDelegate;
 @property (nonatomic, strong, readonly) NSMutableDictionary *collections;
 @property (nonatomic, copy, readonly) NSString *userId;
@@ -61,5 +65,34 @@ typedef void(^MeteorClientMethodCallback)(NSDictionary *response, NSError *error
 
 - (void)authenticationWasSuccessful;
 - (void)authenticationFailed:(NSString *)reason;
+
+@end
+
+/*
+ * Delegate Method for callbacks regarding Connection status
+ */
+
+#pragma mark - <DDPConnectionDelegate>
+
+@protocol DDPConnectionDelegate <NSObject>
+
+- (void) clientConnected;
+- (void) clientDisconnected;
+- (void) ddpConnected;
+
+@end
+
+/*
+ * Delegate Method for callbacks regarding Subscription updates
+ */
+
+#pragma mark - <DDPSubscriptionDelegate>
+
+@protocol DDPSubscriptionDelegate <NSObject>
+
+- (void) readyMessage:(NSString *) name;
+- (void) addedMessage:(NSString *) name data:(NSDictionary *) data;
+- (void) removedMessage:(NSString *) name;
+- (void) changedMessage:(NSString *) name data:(NSDictionary *) data;
 
 @end

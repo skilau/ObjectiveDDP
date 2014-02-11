@@ -45,9 +45,9 @@ extern "C" {
 - (void)_handleLoginChallengeResponse:(NSDictionary *)message msg:(NSString *)msg;
 - (void)_handleLoginError:(NSDictionary *)message msg:(NSString *)msg;
 - (void)_handleHAMKVerification:(NSDictionary *)message msg:(NSString *)msg;
-- (void)_handleAddedMessage:(NSDictionary *)message msg:(NSString *)msg;
-- (void)_handleRemovedMessage:(NSDictionary *)message msg:(NSString *)msg;
-- (void)_handleChangedMessage:(NSDictionary *)message msg:(NSString *)msg;
+- (void)_handleAddedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate;
+- (void)_handleRemovedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate;
+- (void)_handleChangedMessage:(NSDictionary *)message msg:(NSString *)msg delegate:(id<DDPSubscriptionDelegate>) delegate;
 
 # pragma mark - SRP Auth Parsing
 - (void)didReceiveLoginChallengeWithResponse:(NSDictionary *)response;
