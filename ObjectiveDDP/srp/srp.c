@@ -150,8 +150,11 @@ static NGConstant * new_ng( SRP_NGType ng_type, const char * n_hex, const char *
     ng->N             = BN_new();
     ng->g             = BN_new();
 
-    if( !ng || !ng->N || !ng->g )
+    if( !ng || !ng->N || !ng->g ) {
+        if (ng)
+            free(ng);
        return 0;
+    }
 
     if ( ng_type != SRP_NG_CUSTOM )
     {
@@ -317,11 +320,13 @@ static void calculate_M( SRP_HashAlgorithm alg, NGConstant *ng, unsigned char * 
     int           i = 0;
     int           hash_len = hash_length(alg);
         
+    memset(H_N, 0, SHA256_DIGEST_LENGTH);
+    memset(H_g, 0, SHA256_DIGEST_LENGTH);
+
     hash_num( alg, ng->N, H_N );
     hash_num( alg, ng->g, H_g );
     
     hash(alg, (const unsigned char *)I, strlen(I), H_I);
-    
     
     for (i=0; i < hash_len; i++ )
         H_xor[i] = H_N[i] ^ H_g[i];
@@ -430,7 +435,7 @@ struct SRPVerifier *  srp_verifier_new( SRP_HashAlgorithm alg, SRP_NGType ng_typ
     BIGNUM             *tmp1 = BN_new();
     BIGNUM             *tmp2 = BN_new();
     BN_CTX             *ctx  = BN_CTX_new();
-    int                 ulen = strlen(username) + 1;
+    unsigned long      ulen = strlen(username) + 1;
     NGConstant         *ng   = new_ng( ng_type, n_hex, g_hex );
     struct SRPVerifier *ver  = 0;
 
@@ -574,10 +579,13 @@ SRPUser * srp_user_new_with_a(SRP_HashAlgorithm alg,
                               const char *g_hex,
                               BIGNUM *a) {
     SRPUser *usr = (SRPUser *)malloc(sizeof(SRPUser));
-    int username_length = strlen(username) + 1;
-    int password_length = strlen(password) + 1;
+
+    long username_length = strlen(username) + 1;
+    long password_length = strlen(password) + 1;
     
     if (!usr) goto err_exit;
+
+    memset((void*)usr, 0, sizeof(SRPUser));
 
     init_random();
     
@@ -591,7 +599,7 @@ SRPUser * srp_user_new_with_a(SRP_HashAlgorithm alg,
     
     usr->username = (const char *) malloc(username_length);
     usr->password = (const char *) malloc(password_length);
-    usr->password_len = password_length;
+    usr->password_len = (int) password_length;
     
     if (!usr->username || !usr->password) goto err_exit;
     
@@ -805,7 +813,7 @@ const char * meteor_user_generate_M_string(SRPUser *usr,
                                    const char *S_str,
                                    unsigned char *buff,
                                    const char *B_str) {
-    BIGNUM *M = BN_new();
+    BIGNUM *M;
 
     char *ABS = malloc(strlen(usr->Astr)+1 + strlen(B_str)+1 + strlen(S_str)+1 + 1);
     strcpy(ABS, usr->Astr);
